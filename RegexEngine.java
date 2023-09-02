@@ -8,8 +8,8 @@ public class RegexEngine {
 
         boolean verboseMode = false;
 
-         // Check for verbose mode
-         if (args.length > 0 && args[0].equals("-v")) {
+        // Check for verbose mode
+        if (args.length > 0 && args[0].equals("-v")) {
             verboseMode = true;
         }
 
@@ -42,6 +42,10 @@ public class RegexEngine {
 
     // I using the logic stack for handling the method that parses regex
     private static NFA parseRegex(String regex) {
+        if (regex.isEmpty()) {
+            throw new IllegalArgumentException("Regex cannot be empty.");
+        }
+
         Stack<Character> operators = new Stack<>();
         Stack<NFA> operands = new Stack<>();
 
@@ -71,7 +75,7 @@ public class RegexEngine {
                 if (i == regex.length()) {
                     throw new IllegalArgumentException("Unmatched [ in regex.");
                 }
-                operands.push(NFA.characterClass(charClass.toString()));
+                operands.push(processCharacterClass(charClass.toString()));
             } else if (c == '\\') {
                 i++; // Move to the next character
                 if (i == regex.length()) {
@@ -89,19 +93,9 @@ public class RegexEngine {
                     processOperator(operators, operands);
                 }
                 operators.push(c);
+            } else {
+                operands.push(NFA.basic(c));
             }
-            else{
-            operands.push(NFA.basic(c));
-            }
-            // else {
-            //     operands.push(NFA.basic(c));
-            //     if (i < regex.length() - 1 && isLiteralCharacter(regex.charAt(i + 1))) {
-            //         while (!operators.isEmpty() && precedence(operators.peek()) >= precedence('.')) {
-            //             processOperator(operators, operands);
-            //         }
-            //         operators.push('.'); // Implicit concatenation
-            //     }
-            // }
         }
 
         if (balance != 0) {
@@ -159,6 +153,39 @@ public class RegexEngine {
     public void printNFA(String pattern) {
         NFA nfa = constructNFA(pattern);
         nfa.printTransitionTable();
-        
+
     }
+
+    // A method to create NFA from character classes
+    private static NFA processCharacterClass(String charClass) {
+        NFA result = null;
+
+        for (int i = 0; i < charClass.length(); i++) {
+            char c = charClass.charAt(i);
+
+            if (i + 2 < charClass.length() && charClass.charAt(i + 1) == '-') {
+                // It's a range
+                char startRange = c;
+                char endRange = charClass.charAt(i + 2);
+
+                for (char r = startRange; r <= endRange; r++) {
+                    if (result == null) {
+                        result = NFA.basic(r);
+                    } else {
+                        result = NFA.alternation(result, NFA.basic(r));
+                    }
+                }
+                i += 2; // Skip the next two characters of the range
+            } else {
+                if (result == null) {
+                    result = NFA.basic(c);
+                } else {
+                    result = NFA.alternation(result, NFA.basic(c));
+                }
+            }
+        }
+
+        return result;
+    }
+
 }
