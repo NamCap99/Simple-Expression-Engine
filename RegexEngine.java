@@ -6,19 +6,19 @@ public class RegexEngine {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Show menu to the user
-        System.out.println("Choose mode:");
-        System.out.println("1. Normal Mode");
-        System.out.println("2. Verbose Mode");
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume the newline
+        boolean verboseMode = false;
+
+         // Check for verbose mode
+         if (args.length > 0 && args[0].equals("-v")) {
+            verboseMode = true;
+        }
 
         System.out.print("Enter regex: ");
         String regex = scanner.nextLine();
 
         NFA nfa = constructNFA(regex);
 
-        if (choice == 2) {
+        if (verboseMode) {
             nfa.printTransitionTable();
         }
 
@@ -115,11 +115,6 @@ public class RegexEngine {
         return operands.pop();
     }
 
-    // private static boolean isLiteralCharacter(char c) {
-    //     return !(c == '(' || c == ')' || c == '*' || c == '+' || c == '?' || c == '|' || c == '[' || c == '\\');
-    // }
-    
-
     private static void processOperator(Stack<Character> operators, Stack<NFA> operands) {
         char operator = operators.pop();
         switch (operator) {
@@ -140,12 +135,6 @@ public class RegexEngine {
                 operand = operands.pop();
                 operands.push(NFA.zeroOrOne(operand));
                 break;
-            // case '.':
-            //     NFA right = operands.pop();
-            //     NFA left = operands.pop();
-            //     operands.push(NFA.concatenation(left, right));
-            //     break;
-            //  }
         }
     }
 
@@ -157,8 +146,6 @@ public class RegexEngine {
                 return 2;
             case '+':
                 return 2;
-            case '.':
-                return 3;
             default:
                 return 0;
         }
